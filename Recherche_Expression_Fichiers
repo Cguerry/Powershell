@@ -1,0 +1,125 @@
+#======================================================================================
+# Script : Recherche d'expression dans plusieurs fichiers
+# Auteur : Cynthia GUERRY
+# Version 1.0
+# Date de conception : 07.11.2019
+#======================================================================================
+
+do { do {
+
+Clear-Host
+
+Write-Host 
+"######################################################################################
+###########################                               #############################                          
+###########################  Recherche d'expression dans  #############################
+###########################       Plusieurs fichiers      #############################
+###########################                               ############################# 
+#######################################################################################"
+
+do {
+$ChoixPath = Read-Host "Souhaitez-vous analyser un fichier en local ? (O\N)"
+if ($ChoixPath -eq "O") {
+#Choix de dossier à analyser
+function Select-Folder($message='Sélectionner un répertoire', $path = "\\") {
+$object = New-Object -comObject Shell.Application
+
+$folder = $object.BrowseForFolder(0, $message, 0, $path)
+if ($folder -ne $null) {
+$folder.self.Path
+}
+}
+$folderpath = Select-Folder 'Sélectionner un répertoire'
+}
+if ($ChoixPath -eq "N") {
+$folderpath = Read-Host "Taper à la main le chemin"
+}
+} until ($ChoixPath -eq "O" -or $ChoixPath -eq "N")
+
+$ChoixFiltres = Read-Host "Souhaitez-vous un filtre d'extension ? (O\N)"
+#--------------------------------------------------------------------------------------
+if ($ChoixFiltres -eq "O") {
+$filtre = Read-Host "Extension format ex : *.txt"
+$MotRech = Read-Host "Expression à chercher"
+
+Write-Host "Analyse en cours..."
+
+$Result = Get-ChildItem -Recurse -Filter $filtre -Path $folderpath | Select-String -Pattern $MotRech | group Path 
+
+if ($Result -eq $null) { 
+Write-Host "Pas de résultat, vous allez quitter le script."
+pause
+}
+
+else {
+#Ouverture du dialogue pour enregistrement
+
+[System.Reflection.Assembly]::LoadWithPartialName("System.windows.forms") |
+Out-Null
+
+$SaveFileDial = New-Object System.Windows.Forms.SaveFileDialog
+$SaveFileDial.filter = "CSV (*.csv)| *.csv"
+$SaveFileDial.Filename
+$SaveFileDial.Title = "Sélectionner le dossier où vous souhaitez enregistrer le résultat :"
+$Resultat = $SaveFileDial.ShowDialog()
+
+$Result | select Name | Export-Csv $SaveFileDial.FileName  -NoTypeInformation -Delimiter ";"
+
+start $SaveFileDial.FileName
+}
+}
+#--------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------
+if ($ChoixFiltres -eq "N") {
+$MotRech = Read-Host "Expression à chercher"
+
+Write-Host "Analyse en cours..."
+
+$Result = Get-ChildItem -Recurse -Path $folderpath | Select-String -Pattern $MotRech | group Path
+
+if ($Result -eq $null) { 
+Write-Host "Pas de résultat."
+}
+
+else {
+#Ouverture du dialogue pour enregistrement
+
+[System.Reflection.Assembly]::LoadWithPartialName("System.windows.forms") |
+Out-Null
+
+$SaveFileDial = New-Object System.Windows.Forms.SaveFileDialog
+$SaveFileDial.filter = "CSV (*.csv)| *.csv"
+$SaveFileDial.Filename
+$SaveFileDial.Title = "Sélectionner le dossier où vous souhaitez enregistrer le résultat :"
+$Resultat = $SaveFileDial.ShowDialog()
+
+$result | select Name | Export-Csv $SaveFileDial.FileName  -NoTypeInformation -Delimiter ";"
+
+start $SaveFileDial.FileName
+}
+}
+#--------------------------------------------------------------------------------------
+} until ($ChoixFiltres -eq "O" -or $ChoixFiltres -eq "N")
+
+Write-Host "Analyse finie"
+
+#Fenêtre Oui/Non 
+function Show-Message {
+    param (
+    [string]$Message = "Message",
+    [string]$Titre = "Titre",
+    [System.Windows.Forms.MessageBoxButtons]$Buttons = [System.Windows.Forms.MessageBoxButtons]::OK,
+    [System.Windows.Forms.MessageBoxIcon]$Icon = [System.Windows.Forms.MessageBoxIcon]::None
+    )
+ 
+    # Charger la bibliothèque d'objets graphiques Windows.Forms
+    [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") | Out-Null
+ 
+    # Afficher la boite de dialogue et renvoi la valeur de retour (de type DialogResult)
+    Return [System.Windows.Forms.MessageBox]::Show($Message, $Titre, $Buttons, $Icon)
+}
+
+$Reponse = Show-Message "Voulez-vous analyser d'autres fichiers ?" -Titre "Boite de dialogue" -Buttons YesNo -Icon Question
+
+# Si répondu "Non" fin de la boucle.
+} until ($Reponse -eq [System.Windows.Forms.DialogResult]::No) 
