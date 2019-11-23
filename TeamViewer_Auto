@@ -1,0 +1,28 @@
+#======================================================================================#======================================================================================
+# Installation et désinstallation Auto de TeamViewer
+# Script de Cynthia GUERRY
+# Version 1.0
+# Date de conception : 21.10.2019
+#======================================================================================#======================================================================================
+
+#Chemin du script
+$chemin = Split-Path $MyInvocation.MyCommand.path
+
+#Installation et lancement de TeamViewer
+Start-Process "$chemin\TeamViewer_Setup.exe" -ArgumentList "/S /norestart" -Wait | start-process "C:\Program Files (x86)\TeamViewer\TeamViewer.exe"
+
+#Pause
+Start-Sleep -Seconds 15
+
+#Boucle : Continue "get-process" tant que le processus de TeamViewer n'est pas arrêté. Quand il est arrêté, désinstallation de l'application.
+Do{ 
+
+$Gp = Get-Process "TeamViewer" -ea SilentlyContinue
+
+} Until($Gp -eq $Null)
+
+#Fin du process de la Popup
+Stop-Process -name "mshta"
+
+#Désinstallation de TeamViewer
+Start-Process -FilePath "C:\Program Files (x86)\TeamViewer\uninstall.exe" -ArgumentList "/S /norestart" -Wait
